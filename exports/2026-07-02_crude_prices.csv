@@ -1,0 +1,6 @@
+id,price_date,benchmark,price,previous_price,daily_change,daily_change_pct,unit,source,collected_at
+1,2026-07-02,Kuwait Export Crude,79.5,,,,USD/bbl,KPC Official,2026-07-02T02:03:24
+2,2026-07-02,Brent,71.2,,,,USD/bbl,Yahoo Finance (BZ=F),2026-07-02T02:03:24
+3,2026-07-02,WTI,68.1,,,,USD/bbl,Yahoo Finance (CL=F),2026-07-02T02:03:24
+4,2026-07-02,Oman,68.1,,,,USD/bbl,Yahoo Finance (QM=F),2026-07-02T02:03:25
+5,2026-07-02,Dubai,67.99,,,,USD/bbl,Scraped (oilprice_charts),2026-07-02T02:03:27

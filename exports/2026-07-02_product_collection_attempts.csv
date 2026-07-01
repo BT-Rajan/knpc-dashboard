@@ -1,0 +1,11 @@
+id,attempt_date,market,product,source,status,message,collected_at
+1,2026-07-02,Singapore / Regional Proxy,Naphtha,investing_commodities,error,403 Client Error: Forbidden for url: https://www.investing.com/commodities/,2026-07-02T02:03:28
+2,2026-07-02,Singapore / Regional Proxy,Naphtha,tradingeconomics_energy,success,Extracted price: 115.0,2026-07-02T02:03:28
+3,2026-07-02,Singapore / Regional Proxy,Gasoline 92,oilprice_charts,success,Extracted price: 150.0,2026-07-02T02:03:30
+4,2026-07-02,Singapore / Regional Proxy,Gasoline 95,oilprice_charts,success,Extracted price: 150.0,2026-07-02T02:03:31
+5,2026-07-02,Singapore / Regional Proxy,Jet Kerosene,investing_commodities,error,403 Client Error: Forbidden for url: https://www.investing.com/commodities/,2026-07-02T02:03:32
+6,2026-07-02,Singapore / Regional Proxy,Gasoil 10ppm,oilprice_charts,success,Extracted price: 150.0,2026-07-02T02:03:34
+7,2026-07-02,Singapore / Regional Proxy,Fuel Oil 180 CST,oilprice_charts,success,Extracted price: 150.0,2026-07-02T02:03:36
+8,2026-07-02,Singapore / Regional Proxy,Fuel Oil 380 CST,investing_commodities,error,403 Client Error: Forbidden for url: https://www.investing.com/commodities/,2026-07-02T02:03:37
+9,2026-07-02,Singapore / Regional Proxy,LPG,investing_commodities,error,403 Client Error: Forbidden for url: https://www.investing.com/commodities/,2026-07-02T02:03:39
+10,2026-07-02,Singapore / Regional Proxy,LPG,tradingeconomics_energy,success,Extracted price: 115.0,2026-07-02T02:03:39
