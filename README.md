@@ -11,7 +11,28 @@ Originally a single-page price dashboard, this has been restructured into a four
 
 ---
 
-## Quick Start
+## One-Click Installer (recommended, Windows)
+
+The easiest way to install this platform on a new computer — no manual `pip install`, no terminal commands to remember, and no GUI toolkit dependency (earlier drafts used a Tkinter GUI, which isn't guaranteed to ship with every Python install — this version doesn't need it).
+
+1. Download [`start.bat`](start.bat) — just that one file, save it anywhere (Desktop is fine).
+2. Double-click it.
+
+`start.bat` checks that Python is installed and on your PATH (opening the official download page for you if it isn't), then fetches and runs `installer/setup_and_play.py`, a console program that:
+
+1. Downloads the platform from GitHub
+2. Sets up its own isolated Python environment (won't conflict with anything else on your machine) and installs requirements
+3. Runs the first data pull (`main.py`)
+4. Starts the dashboard and opens it in your browser
+
+All of that runs in the background — and while it does, you get a choice:
+
+- **[P] Play a quick trivia game** — oil & energy market trivia (Q&A sourced from [`installer_game.txt`](installer_game.txt), which you can freely edit or add questions to; see the format guide at the top of that file) that keeps going for as long as setup takes, and hands control back to the installer the moment it's ready.
+- **[W] Wait quietly** — a simple live progress view, with raw pip/Python output translated into plain-language status lines instead of a wall of logs.
+
+Re-running the installer at any time does a clean reinstall into the same folder — handy for picking up updates.
+
+## Manual Installation (alternative, all platforms)
 
 ### 1. Install dependencies
 

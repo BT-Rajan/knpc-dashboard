@@ -1,0 +1,192 @@
+# installer_game.txt
+# ---------------------------------------------------------------------
+# Question bank for the KNPC Setup Wizard's "play while you wait" quiz.
+#
+# FORMAT (one block per question, blank lines between blocks optional):
+#   Q:<question text>
+#   A:<option A>
+#   B:<option B>
+#   C:<option C>
+#   D:<option D>
+#   ANS:<correct letter, A/B/C/D>
+#
+# Avoid using %, &, |, <, >, or ^ in question/option text — the quiz is
+# read by a Windows batch launcher and those characters have special
+# meaning there. Everything else is fair game. Add as many questions as
+# you like; they're shuffled and looped for as long as setup is running.
+# ---------------------------------------------------------------------
+
+Q:Which crude oil benchmark is most widely referenced for North American pricing?
+A:Brent
+B:WTI
+C:Dubai
+D:Urals
+ANS:B
+
+Q:What does OPEC+ add to the original OPEC membership?
+A:A group of non-OPEC oil-exporting allies, including Russia
+B:All G7 nations
+C:Only Gulf state members
+D:Renewable energy producers
+ANS:A
+
+Q:Which agency publishes the Short-Term Energy Outlook?
+A:OPEC
+B:World Bank
+C:U.S. Energy Information Administration
+D:International Monetary Fund
+ANS:C
+
+Q:Brent crude is primarily sourced from which body of water?
+A:The Gulf of Mexico
+B:The North Sea
+C:The Persian Gulf
+D:The Caspian Sea
+ANS:B
+
+Q:What does IEA stand for?
+A:International Energy Agency
+B:Independent Energy Alliance
+C:International Export Authority
+D:Institute of Energy Analysts
+ANS:A
+
+Q:Which of these is a refined petroleum product, not a crude benchmark?
+A:WTI
+B:Brent
+C:Naphtha
+D:Dubai
+ANS:C
+
+Q:Roughly how many barrels are in one metric tonne of crude oil (varies by grade)?
+A:About 1 barrel
+B:About 3 barrels
+C:About 7 barrels
+D:About 20 barrels
+ANS:C
+
+Q:Which strait is considered one of the world's most important oil chokepoints?
+A:Strait of Gibraltar
+B:Strait of Hormuz
+C:Bering Strait
+D:Bosphorus Strait
+ANS:B
+
+Q:What is "Kuwait Export Crude"?
+A:A refined diesel product
+B:Kuwait's benchmark crude oil grade
+C:A natural gas export terminal
+D:An OPEC+ compliance report
+ANS:B
+
+Q:What unit is standard for pricing crude oil globally?
+A:USD per litre
+B:USD per barrel
+C:USD per tonne
+D:USD per gallon
+ANS:B
+
+Q:Which of these best describes "Dubai crude"?
+A:A benchmark for Middle Eastern sour crude often used for Asian pricing
+B:A synthetic biofuel blend
+C:A European refined diesel grade
+D:A U.S. shale oil grade
+ANS:A
+
+Q:What does a "quarterly market report" typically summarize?
+A:Employee attendance
+B:Price movements and market developments over a 3-month period
+C:Software release notes
+D:Annual tax filings
+ANS:B
+
+Q:In oil markets, what does "contango" describe?
+A:A market where futures prices are higher than the spot price
+B:A type of drilling technique
+C:A pipeline safety inspection
+D:A refinery shutdown procedure
+ANS:A
+
+Q:Which of these events would typically be classified as "geopolitical" in a market intelligence feed?
+A:A refinery performing scheduled maintenance
+B:Sanctions imposed on an oil-exporting nation
+C:A company's quarterly earnings call
+D:A software update
+ANS:B
+
+Q:What does "LPG" stand for?
+A:Liquefied Petroleum Gas
+B:Low Pressure Gasoline
+C:Light Paraffin Grade
+D:Limited Production Guarantee
+ANS:A
+
+Q:Which of these is NOT one of the refined products commonly tracked alongside crude benchmarks?
+A:Jet Kerosene
+B:Gasoil
+C:Fuel Oil
+D:Copper
+ANS:D
+
+Q:What does "MOG" commonly stand for in a refiner's org chart?
+A:Marketing Operations Group
+B:Maintenance Oversight Guild
+C:Multi-Output Gauge
+D:Manual Operations Grid
+ANS:A
+
+Q:Why might an analyst assign a "High" impact rating to a market development?
+A:It's a routine weekly update
+B:It could meaningfully move prices or supply, e.g. a major supply disruption
+C:It was published on a Friday
+D:It came from a well-known news outlet
+ANS:B
+
+Q:Which of these best describes "Fuel Oil" in a refined-products context?
+A:A light product used mainly in aviation
+B:A heavy residual product often used in shipping and power generation
+C:A type of crude oil, not a refined product
+D:A lubricant additive
+ANS:B
+
+Q:What is a "benchmark crude" used for?
+A:Measuring drill bit wear
+B:Serving as a reference price point for pricing other crude oil grades
+C:Testing refinery safety equipment
+D:Calibrating storage tank gauges
+ANS:B
+
+Q:Which of the following would most likely be an EIA publication?
+A:A weekly petroleum status report
+B:A quarterly software changelog
+C:A retail marketing brochure
+D:A shipping manifest
+ANS:A
+
+Q:What does "Gasoil" typically refer to?
+A:A refined middle-distillate product similar to diesel
+B:Raw natural gas
+C:A crude oil benchmark
+D:An aviation lubricant
+ANS:A
+
+Q:Why do market intelligence teams track both crude AND refined product prices?
+A:Refined product margins depend on the spread between crude costs and product prices
+B:They are always identical in price
+C:Refined products don't affect profitability
+D:Regulations require tracking only one
+ANS:A
+
+Q:Which of these is an example of an "economic" (rather than geopolitical) driver of oil prices?
+A:A central bank interest rate decision affecting demand outlook
+B:A regional armed conflict
+C:A pipeline sabotage
+D:Export sanctions
+ANS:A
+
+Q:What is the general purpose of OPEC+ production quotas?
+A:To standardize drilling equipment
+B:To manage supply levels and influence crude oil prices
+C:To set refinery safety codes
+D:To regulate shipping insurance rates
+ANS:B
