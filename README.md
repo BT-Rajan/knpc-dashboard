@@ -13,24 +13,25 @@ Originally a single-page price dashboard, this has been restructured into a four
 
 ## One-Click Installer (recommended, Windows)
 
-The easiest way to install this platform on a new computer — no manual `pip install`, no terminal commands to remember, and no GUI toolkit dependency (earlier drafts used a Tkinter GUI, which isn't guaranteed to ship with every Python install — this version doesn't need it).
+The easiest way to set this platform up on a new computer — no manual `pip install`, no terminal commands to remember, and no GUI toolkit dependency (earlier drafts used a Tkinter GUI, which isn't guaranteed to ship with every Python install — this version doesn't need it).
 
-1. Download [`start.bat`](start.bat) — just that one file, save it anywhere (Desktop is fine).
-2. Double-click it.
+> **Note:** since this repository is private, `start.bat` sets up the copy of the project it's already sitting in rather than downloading anything from GitHub — you'll need to have cloned or downloaded this repo first (the usual way) before running it.
 
-`start.bat` checks that Python is installed and on your PATH (opening the official download page for you if it isn't), then fetches and runs `installer/setup_and_play.py`, a console program that:
+1. Clone or download this repository.
+2. Double-click `start.bat` in the project folder.
 
-1. Downloads the platform from GitHub
-2. Sets up its own isolated Python environment (won't conflict with anything else on your machine) and installs requirements
-3. Runs the first data pull (`main.py`)
-4. Starts the dashboard and opens it in your browser
+`start.bat` checks that Python is installed and on your PATH (opening the official download page for you if it isn't), then runs `installer/setup_and_play.py`, a console program that:
+
+1. Sets up its own isolated Python environment in this folder (won't conflict with anything else on your machine) and installs requirements
+2. Runs the first data pull (`main.py`)
+3. Starts the dashboard and opens it in your browser
 
 All of that runs in the background — and while it does, you get a choice:
 
-- **[P] Play a quick trivia game** — oil & energy market trivia (Q&A sourced from [`installer_game.txt`](installer_game.txt), which you can freely edit or add questions to; see the format guide at the top of that file) that keeps going for as long as setup takes, and hands control back to the installer the moment it's ready.
+- **[P] Play a quick trivia game** — oil & energy market trivia (Q&A sourced from [`installer_game.txt`](installer_game.txt), which you can freely edit or add questions to; see the format guide at the top of that file). Questions are shuffled (never played twice in a row), and the game only ends the moment the dashboard server is confirmed up and responding — at which point it shows your final score as `correct/attempted` (e.g. `4/7`) and hands off to the finished dashboard.
 - **[W] Wait quietly** — a simple live progress view, with raw pip/Python output translated into plain-language status lines instead of a wall of logs.
 
-Re-running the installer at any time does a clean reinstall into the same folder — handy for picking up updates.
+Re-running the installer at any time re-installs cleanly in place — handy for picking up updates.
 
 ## Manual Installation (alternative, all platforms)
 

@@ -2,10 +2,11 @@
 """
 KNPC Business Data Intelligence Platform — Console Setup
 ==========================================================
-Runs the full install (download -> venv -> pip install -> first data pull
--> launch dashboard) in a background thread, while the terminal in front
-of you either plays a trivia quiz or shows plain-language progress —
-your choice. No GUI toolkit required, just the Python standard library.
+Sets up and launches the dashboard from the copy of this repository it's
+already running in (no re-downloading anything — if you have this file,
+you already have the rest of the repo it lives in). Runs the install in
+a background thread while the terminal in front of you either plays a
+trivia quiz or shows plain-language progress — your choice.
 """
 import os
 import re
@@ -13,8 +14,6 @@ import sys
 import time
 import queue
 import random
-import shutil
-import zipfile
 import threading
 import subprocess
 import urllib.request
@@ -34,15 +33,13 @@ if IS_WINDOWS:
     os.system("")  # enables ANSI escape processing in cmd.exe
 
 # ------------------------------------------------------------------------
-# CONFIG
+# CONFIG — this script lives at <repo_root>/installer/setup_and_play.py,
+# so the repo root is simply its grandparent directory. Everything is set
+# up and run in place; nothing is downloaded from the internet.
 # ------------------------------------------------------------------------
-GITHUB_USER = "BT-Rajan"
-GITHUB_REPO = "knpc-dashboard"
-GITHUB_BRANCH = "main"
-GITHUB_ZIP_URL = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/archive/refs/heads/{GITHUB_BRANCH}.zip"
-GAME_FILE_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/installer_game.txt"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+GAME_FILE = REPO_ROOT / "installer_game.txt"
 STREAMLIT_URL = "http://localhost:8501"
-DEFAULT_INSTALL_DIR = Path.home() / "KNPC-Dashboard"
 
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if IS_WINDOWS else 0
 
@@ -87,8 +84,8 @@ def banner():
 
 
 # ------------------------------------------------------------------------
-# OUTPUT TRANSLATION — same idea as before: turn raw pip/python output
-# into short, natural-language status lines instead of a wall of text.
+# OUTPUT TRANSLATION — turns raw pip/python output into short, natural-
+# language status lines instead of a wall of text.
 # ------------------------------------------------------------------------
 def translate_pip_line(line: str):
     line = line.strip()
@@ -132,10 +129,10 @@ def translate_main_line(line: str):
     return None
 
 
-def venv_python_path(install_dir: Path) -> Path:
+def venv_python_path() -> Path:
     if IS_WINDOWS:
-        return install_dir / ".venv" / "Scripts" / "python.exe"
-    return install_dir / ".venv" / "bin" / "python"
+        return REPO_ROOT / ".venv" / "Scripts" / "python.exe"
+    return REPO_ROOT / ".venv" / "bin" / "python"
 
 
 def stream_process(cmd, cwd, out_queue, translator):
@@ -155,12 +152,12 @@ def stream_process(cmd, cwd, out_queue, translator):
 
 
 # ------------------------------------------------------------------------
-# BACKGROUND INSTALL SEQUENCE
+# BACKGROUND INSTALL SEQUENCE — operates entirely on REPO_ROOT, the copy
+# of the project this script already lives inside.
 # ------------------------------------------------------------------------
 class Installer(threading.Thread):
-    def __init__(self, install_dir: Path, out_queue: queue.Queue, done_event, fail_event):
+    def __init__(self, out_queue: queue.Queue, done_event, fail_event):
         super().__init__(daemon=True)
-        self.install_dir = install_dir
         self.q = out_queue
         self.done_event = done_event
         self.fail_event = fail_event
@@ -169,7 +166,6 @@ class Installer(threading.Thread):
 
     def run(self):
         try:
-            self._download_and_extract()
             venv_py = self._create_venv()
             self._pip_install(venv_py)
             self._run_main(venv_py)
@@ -180,38 +176,17 @@ class Installer(threading.Thread):
             self.q.put(f"⚠️  {ex}")
             self.fail_event.set()
 
-    def _download_and_extract(self):
-        target = self.install_dir
-        target.parent.mkdir(parents=True, exist_ok=True)
-        self.q.put("📥 Downloading the dashboard files from GitHub…")
-
-        zip_path = target.parent / f"{GITHUB_REPO}-download.zip"
-        urllib.request.urlretrieve(GITHUB_ZIP_URL, zip_path)
-
-        self.q.put("📂 Unpacking the files…")
-        extract_root = target.parent / f"__extract_{GITHUB_REPO}"
-        if extract_root.exists():
-            shutil.rmtree(extract_root)
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(extract_root)
-
-        extracted_subdirs = [p for p in extract_root.iterdir() if p.is_dir()]
-        source_dir = extracted_subdirs[0] if extracted_subdirs else extract_root
-
-        if target.exists():
-            shutil.rmtree(target)
-        shutil.move(str(source_dir), str(target))
-        shutil.rmtree(extract_root, ignore_errors=True)
-        zip_path.unlink(missing_ok=True)
-        self.q.put("✅ Files are ready.")
-
     def _create_venv(self) -> Path:
+        venv_py = venv_python_path()
+        if venv_py.exists():
+            self.q.put("✅ Isolated environment already set up.")
+            return venv_py
+
         self.q.put("🧪 Setting up an isolated Python environment…")
         result = subprocess.run(
-            [sys.executable, "-m", "venv", str(self.install_dir / ".venv")],
+            [sys.executable, "-m", "venv", str(REPO_ROOT / ".venv")],
             capture_output=True, text=True, timeout=120, creationflags=NO_WINDOW,
         )
-        venv_py = venv_python_path(self.install_dir)
         if result.returncode != 0 or not venv_py.exists():
             self.q.put("⚠️  Couldn't create an isolated environment — using your system Python instead.")
             return Path(sys.executable)
@@ -219,19 +194,19 @@ class Installer(threading.Thread):
         return venv_py
 
     def _pip_install(self, venv_py: Path):
-        req_file = self.install_dir / "requirements.txt"
+        req_file = REPO_ROOT / "requirements.txt"
         if not req_file.exists():
-            raise RuntimeError("requirements.txt wasn't found in the downloaded files.")
+            raise RuntimeError(f"requirements.txt wasn't found in {REPO_ROOT}.")
         rc = stream_process(
             [str(venv_py), "-m", "pip", "install", "-r", "requirements.txt"],
-            cwd=str(self.install_dir), out_queue=self.q, translator=translate_pip_line,
+            cwd=str(REPO_ROOT), out_queue=self.q, translator=translate_pip_line,
         )
         if rc != 0:
             raise RuntimeError("Package installation failed. Check your internet connection and try again.")
 
     def _run_main(self, venv_py: Path):
         rc = stream_process(
-            [str(venv_py), "main.py"], cwd=str(self.install_dir),
+            [str(venv_py), "main.py"], cwd=str(REPO_ROOT),
             out_queue=self.q, translator=translate_main_line,
         )
         # main.py is designed to always exit 0 even when some sources are
@@ -244,7 +219,7 @@ class Installer(threading.Thread):
         self.q.put("🚀 Starting the dashboard server…")
         self.streamlit_process = subprocess.Popen(
             [str(venv_py), "-m", "streamlit", "run", "app.py", "--server.headless", "true"],
-            cwd=str(self.install_dir), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            cwd=str(REPO_ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             creationflags=NO_WINDOW,
         )
         for _ in range(60):
@@ -281,14 +256,17 @@ def parse_questions(text: str):
 
 
 def load_questions():
-    try:
-        with urllib.request.urlopen(GAME_FILE_URL, timeout=8) as resp:
-            text = resp.read().decode("utf-8")
-        parsed = parse_questions(text)
-        if parsed:
-            return parsed
-    except Exception:
-        pass
+    """Reads the question bank from the local repo copy. No network
+    access involved, so this always works regardless of repo visibility
+    or connectivity — the bundled DEFAULT_QUESTIONS only kick in if the
+    file is missing or somehow empty."""
+    if GAME_FILE.exists():
+        try:
+            parsed = parse_questions(GAME_FILE.read_text(encoding="utf-8"))
+            if parsed:
+                return parsed
+        except Exception:
+            pass
     return DEFAULT_QUESTIONS
 
 
@@ -329,26 +307,34 @@ def _read_answer_basic(done_event, fail_event, valid="ABCD"):
         print("Please answer with A, B, C, or D.")
 
 
+def _next_question_index(num_questions, last_idx):
+    """Picks a random question index, avoiding an immediate repeat, so
+    questions always feel shuffled rather than played in file order."""
+    if num_questions == 1:
+        return 0
+    idx = random.randrange(num_questions)
+    while idx == last_idx:
+        idx = random.randrange(num_questions)
+    return idx
+
+
 def play_quiz(done_event, fail_event, out_queue):
     questions = load_questions()
-    random.shuffle(questions)
     score, asked = 0, 0
+    last_idx = -1
 
     print(yellow(bold("🎮 Quiz time! Answer with A, B, C, or D while setup runs in the background.")))
-    print(yellow("   (Setup will interrupt automatically the moment it's ready.)"))
+    print(yellow("   (Setup will interrupt automatically the moment the dashboard is up and running.)"))
     print()
 
-    idx = 0
     while not done_event.is_set() and not fail_event.is_set():
-        if idx >= len(questions):
-            random.shuffle(questions)
-            idx = 0
-        q = questions[idx]
-        idx += 1
-
         _drain_queue_to_console(out_queue)
         if done_event.is_set() or fail_event.is_set():
             break
+
+        idx = _next_question_index(len(questions), last_idx)
+        last_idx = idx
+        q = questions[idx]
 
         print(bold(f"Q{asked + 1}: {q['q']}"))
         for letter in "ABCD":
@@ -368,7 +354,7 @@ def play_quiz(done_event, fail_event, out_queue):
 
     print()
     if asked:
-        print(bold(f"🏁 You scored {score}/{asked}. Nice work!"))
+        print(bold(f"🏁 Final score: {score}/{asked} — the dashboard is ready!"))
     print()
 
 
@@ -394,6 +380,9 @@ def wait_quietly(done_event, fail_event, out_queue):
     _drain_queue_to_console(out_queue)
 
 
+# ------------------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------------------
 def _safe_input(prompt=""):
     try:
         return input(prompt)
@@ -401,22 +390,16 @@ def _safe_input(prompt=""):
         return ""
 
 
-# ------------------------------------------------------------------------
-# MAIN
-# ------------------------------------------------------------------------
 def main():
     banner()
-    install_dir = DEFAULT_INSTALL_DIR
-    custom = _safe_input(f"Install location [{install_dir}]: ").strip()
-    if custom:
-        install_dir = Path(custom)
-
+    print(f"Setting up the dashboard in: {REPO_ROOT}")
     print()
+
     out_queue = queue.Queue()
     done_event = threading.Event()
     fail_event = threading.Event()
 
-    installer = Installer(install_dir, out_queue, done_event, fail_event)
+    installer = Installer(out_queue, done_event, fail_event)
     installer.start()
 
     print("While that gets going, would you like to:")
