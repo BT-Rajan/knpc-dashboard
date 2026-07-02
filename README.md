@@ -9,6 +9,8 @@ Originally a single-page price dashboard, this has been restructured into a four
 3. **Quarterly Market Reports** — generate and publish a quarterly market report (Word document) for the Marketing Operations Group (MOG) division.
 4. **Executive Overview** — the original consolidated dashboard (benchmarks, refined product proxies, volatility charts, live feed, manual correction ledger).
 
+> 📋 For a clean, step-by-step setup walkthrough, see **[INSTALL.md](INSTALL.md)**.
+
 ---
 
 ## One-Click Installer (recommended, Windows)
