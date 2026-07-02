@@ -62,11 +62,34 @@ echo.
 set "TEMPDIR=%TEMP%\knpc_installer_bootstrap"
 if not exist "%TEMPDIR%" mkdir "%TEMPDIR%" >nul 2>nul
 set "SETUP_PY=%TEMPDIR%\setup_and_play.py"
+set "SETUP_URL=https://raw.githubusercontent.com/BT-Rajan/knpc-dashboard/main/installer/setup_and_play.py"
 
-%_ps% "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/BT-Rajan/knpc-dashboard/main/installer/setup_and_play.py' -OutFile '%SETUP_PY%' -UseBasicParsing } catch { exit 1 }"
+if exist "%SETUP_PY%" del "%SETUP_PY%" >nul 2>nul
+
+:: Try curl first - it ships with Windows 10 (1803+) and Windows 11, and
+:: handles TLS negotiation more reliably than older PowerShell defaults.
+where curl >nul 2>nul
+if %errorlevel%==0 (
+    curl -fsSL "%SETUP_URL%" -o "%SETUP_PY%" >nul 2>nul
+)
+
+:: Fall back to PowerShell, explicitly forcing TLS 1.2 - some older
+:: Windows/PowerShell combinations default to TLS 1.0/1.1, which GitHub
+:: rejects, causing Invoke-WebRequest to fail with no useful message.
+if not exist "%SETUP_PY%" (
+    %_ps% "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; try { Invoke-WebRequest -Uri '%SETUP_URL%' -OutFile '%SETUP_PY%' -UseBasicParsing } catch { Write-Host $_.Exception.Message -ForegroundColor Red; exit 1 }"
+)
 
 if not exist "%SETUP_PY%" (
-    %_ps% "Write-Host 'Could not download the setup program. Check your internet connection and try again.' -ForegroundColor Red"
+    %_ps% "Write-Host ''"
+    %_ps% "Write-Host 'Could not download the setup program.' -ForegroundColor Red"
+    %_ps% "Write-Host 'This is usually one of the following:' -ForegroundColor Yellow"
+    %_ps% "Write-Host '  - No internet connection right now' -ForegroundColor Yellow"
+    %_ps% "Write-Host '  - A company firewall or proxy blocking github.com' -ForegroundColor Yellow"
+    %_ps% "Write-Host '  - An outdated Windows/PowerShell TLS setting' -ForegroundColor Yellow"
+    %_ps% "Write-Host ''"
+    %_ps% "Write-Host 'You can also open this link directly in your browser and save the file yourself:' -ForegroundColor Yellow"
+    %_ps% "Write-Host '  %SETUP_URL%' -ForegroundColor Cyan"
     echo.
     pause
     exit /b 1
@@ -78,3 +101,4 @@ echo.
 "%PYCMD%" "%SETUP_PY%"
 
 endlocal
+
