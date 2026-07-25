@@ -1,5 +1,6 @@
 # collectors.py
 from datetime import date, datetime
+import logging
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -77,24 +78,52 @@ def collect_yahoo_crude_benchmark(benchmark, symbol):
     )
     return {"status": "manual_required", "benchmark": benchmark, "message": "Source system didn't publish"}
 
-def collect_kpc_kec_price():
-    try:
-        url = SOURCES["kpc_oil_prices"]
-        html = safe_get(url).text
-        soup = BeautifulSoup(html, "html.parser")
-        text = soup.get_text()
-        
-        # Pull realistic multi-digit barrel numbers (e.g., 70.00 - 99.99)
-        matches = re.findall(r"\b(7[0-9]\.\d{1,2}|8[0-9]\.\d{1,2}|9[0-9]\.\d{1,2})\b", text)
-        if matches:
-            price = float(matches[0])
-            insert_crude_price(str(date.today()), "Kuwait Export Crude", price, "USD/bbl", "KPC Official")
-            return {"status": "success", "benchmark": "Kuwait Export Crude"}
-    except Exception as e:
-        pass
+_KEC_MIN_PLAUSIBLE_PRICE = 20.0
+_KEC_MAX_PLAUSIBLE_PRICE = 200.0
+_KEC_WINDOW_CHARS = 250
+_KEC_NUMBER_RE = re.compile(r"\d{1,4}\.\d{1,2}")
 
-    insert_crude_price(str(date.today()), "Kuwait Export Crude", None, "USD/bbl", "Source system didn't publish")
-    return {"status": "manual_required", "benchmark": "Kuwait Export Crude"}
+
+def _record_kec_failure(reason):
+    logging.warning("KEC price collection failed: %s", reason)
+    insert_crude_price(
+        str(date.today()), "Kuwait Export Crude", None, "USD/bbl",
+        f"Source system didn't publish ({reason})",
+    )
+    return {"status": "manual_required", "benchmark": "Kuwait Export Crude", "reason": reason}
+
+
+def collect_kpc_kec_price():
+    """Scrapes KPC's KEC crude price, anchored to text near the 'KEC' label
+    (not just the first plausible number on the page) and with a wide
+    sanity band so a normal market move can't cause a silent outage.
+    Every failure path records a specific, non-silent reason."""
+    url = SOURCES["kpc_oil_prices"]
+    try:
+        html = safe_get(url).text
+    except Exception as e:
+        return _record_kec_failure(f"network error: {e}")
+
+    soup = BeautifulSoup(html, "html.parser")
+    text = soup.get_text()
+
+    kec_idx = text.upper().find("KEC")
+    if kec_idx == -1:
+        return _record_kec_failure(
+            "'KEC' not found in static HTML — value is likely rendered "
+            "client-side (AJAX/UpdatePanel); a plain requests.get() can't see it."
+        )
+
+    window = text[kec_idx: kec_idx + _KEC_WINDOW_CHARS]
+    candidates = [float(n) for n in _KEC_NUMBER_RE.findall(window)]
+    plausible = [p for p in candidates if _KEC_MIN_PLAUSIBLE_PRICE <= p <= _KEC_MAX_PLAUSIBLE_PRICE]
+
+    if not plausible:
+        return _record_kec_failure(f"'KEC' found, but no plausible price nearby (candidates: {candidates})")
+
+    price = plausible[0]
+    insert_crude_price(str(date.today()), "Kuwait Export Crude", price, "USD/bbl", "KPC Official")
+    return {"status": "success", "benchmark": "Kuwait Export Crude"}
 
 def collect_dubai_price():
     """Tracks the Dubai crude benchmark via public scrape sources, falling
