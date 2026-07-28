@@ -1,0 +1,148 @@
+:root {
+  /* Color */
+  --bg: #0b0d0f;
+  --panel: #14171a;
+  --panel-raised: #191d20;
+  --border: #262b2f;
+  --border-soft: #1d2124;
+  --text: #e8e6e1;
+  --text-muted: #8b8f94;
+  --text-dim: #5b6065;
+  --brass: #b08d57;
+  --brass-bright: #c7a46e;
+  --positive: #6a9c7d;
+  --negative: #c2694f;
+
+  /* Type */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+
+  --radius: 3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--brass);
+  color: var(--bg);
+}
+
+a {
+  color: var(--brass-bright);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+}
+
+:focus-visible {
+  outline: 1px solid var(--brass-bright);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.hairline {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.positive { color: var(--positive); }
+.negative { color: var(--negative); }
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.btn:hover {
+  border-color: var(--brass);
+  color: var(--text);
+}
+.btn-brass {
+  border-color: var(--brass);
+  color: var(--brass-bright);
+}
+.btn-brass:hover {
+  background: var(--brass);
+  color: var(--bg);
+}
+.btn-danger:hover {
+  border-color: var(--negative);
+  color: var(--negative);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+}
+.field label {
+  color: var(--text-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.field input, .field select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--brass);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
