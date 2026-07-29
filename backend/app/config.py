@@ -116,3 +116,67 @@ PRODUCT_KEYWORDS = {
     "FUELOIL380": ["fuel oil 380", "380 cst", "bunker fuel", "fuel oil", "hsfo 380"],
     "LPG": ["lpg", "propane", "butane", "mont belvieu", "aramco cp", "liquefied petroleum"],
 }
+
+# --- Report Generation ---
+QUARTER_MONTHS = {
+    "Q1": (1, 3),
+    "Q2": (4, 6),
+    "Q3": (7, 9),
+    "Q4": (10, 12),
+}
+REPORTS_DIR = BASE_DIR / "exports" / "quarterly_reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+MOG_DIVISION_NAME = "Marketing Operations Group (MOG)"
+
+# Product metadata (proxy mapping from main branch)
+PRODUCT_PROXY_MAP = {
+    "NAPHTHA": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Naphtha / regional naphtha proxy",
+        "benchmark_basis": "Japan C&F Naphtha direction",
+        "notes": "Japan C&F naphtha and regional naphtha prices are commonly used as proxies for Asian naphtha direction."
+    },
+    "GASOLINE92": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Regional gasoline proxy",
+        "benchmark_basis": "CME RBOB Gasoline / regional gasoline proxy",
+        "notes": "Direct Singapore MoPS assessments are often paywalled. Public regional gasoline proxies are utilized."
+    },
+    "GASOLINE95": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Premium gasoline proxy",
+        "benchmark_basis": "Premium regional gasoline markers",
+        "notes": "Tracks high-octane gasoline direction metrics and premium regional retail benchmark directionals."
+    },
+    "JETKERO": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Jet fuel / kerosene proxy",
+        "benchmark_basis": "US Gulf Coast Kerosene / regional proxy",
+        "notes": "Tracking aviation component premium metrics via highly liquid regional public proxy channels."
+    },
+    "GASOIL10": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Middle distillate proxy",
+        "benchmark_basis": "ICE Gasoil / regional low-sulfur diesel proxy",
+        "notes": "Tracking ultra-low sulfur gasoil regional trends against global low-sulfur indicators."
+    },
+    "FUELOIL180": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Residual fuel proxy",
+        "benchmark_basis": "Singapore fuel oil / high sulphur fuel oil proxy",
+        "notes": "Direct Singapore 180 CST assessments are often paywalled. Public fuel oil proxies are used."
+    },
+    "FUELOIL380": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "Residual fuel proxy",
+        "benchmark_basis": "ICE Singapore Fuel Oil 380 CST proxy",
+        "notes": "ICE Singapore fuel oil 380 CST or public HSFO proxies are used where available."
+    },
+    "LPG": {
+        "market": "Singapore / Regional Proxy",
+        "proxy_type": "LPG proxy",
+        "benchmark_basis": "Saudi Aramco CP / Mont Belvieu / regional LPG proxy",
+        "notes": "LPG pricing is often represented through Saudi Aramco CP, Mont Belvieu, or public regional component metrics."
+    }
+}
