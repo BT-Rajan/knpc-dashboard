@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.db import Base, engine
 from app.seed import seed
 from app.scraper import scheduler as scrape_scheduler
-from app.routers import auth, dashboard, admin, export, ai
+from app.routers import auth, dashboard, admin, export, ai, reports
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -26,6 +26,7 @@ app.include_router(dashboard.router)
 app.include_router(admin.router)
 app.include_router(export.router)
 app.include_router(ai.router)
+app.include_router(reports.router)
 
 
 @app.on_event("startup")
