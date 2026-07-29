@@ -70,3 +70,49 @@ SEED_CATALOG = {
         {"code": "LPG", "name": "LPG", "unit": "USD/ton"},
     ],
 }
+
+# --- Seed source data, carried over from github.com/BT-Rajan/knpc-dashboard
+# (main branch) config.py SOURCES / YAHOO_BENCHMARKS / PRODUCT_PROXY_MAP /
+# DUBAI_KEYWORDS. Same underlying websites, re-expressed as rows for this
+# app's Source table (url + source_type + value_selector) instead of
+# in-code collector functions. Pure data — consumed by app/seed.py, no
+# scraper logic changes.
+SOURCE_URLS = {
+    "kpc_oil_prices": "https://eapp.kpc.com.kw/oilprices/oilprices.aspx",
+    "oilprice_charts": "https://oilprice.com/oil-price-charts/",
+    "oilprice_news": "https://oilprice.com/Latest-Energy-News/World-News/",
+    "investing_commodities": "https://www.investing.com/commodities/",
+    "tradingeconomics_energy": "https://tradingeconomics.com/commodities",
+    "yahoo_chart": "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=5d&interval=1d",
+}
+
+# Multi-ticker fallback per crude benchmark (Yahoo Finance), tried in order.
+YAHOO_TICKERS = {
+    "BRENT": ["BZ=F"],
+    "WTI": ["CL=F"],
+    "OMAN": ["O6=F", "QM=F", "O9=F"],
+}
+
+# Keyword-anchored fallback sources (used when a benchmark/product has no
+# clean futures ticker, or as a secondary check behind Yahoo) — same
+# public pages and keyword lists the old app scanned for a nearby price.
+DUBAI_KEYWORDS = ["dubai crude", "dubai", "oman/dubai", "platts dubai"]
+KEC_KEYWORDS = ["kec", "kuwait export crude"]
+BRENT_KEYWORDS = ["brent"]
+WTI_KEYWORDS = ["wti", "west texas intermediate"]
+OMAN_KEYWORDS = ["oman crude", "oman"]
+
+# Same public-page fallback chain the old app used for every refined
+# product (oilprice.com charts -> investing.com -> tradingeconomics.com),
+# and the same per-product keyword lists it searched for.
+PRODUCT_SOURCE_ORDER = ["oilprice_charts", "investing_commodities", "tradingeconomics_energy"]
+PRODUCT_KEYWORDS = {
+    "NAPHTHA": ["naphtha", "japan naphtha", "singapore naphtha", "c&f japan"],
+    "GASOLINE92": ["rbob gasoline", "gasoline 92", "singapore gasoline 92", "92 ron", "gasoline"],
+    "GASOLINE95": ["gasoline 95", "95 ron", "premium gasoline", "gasoline", "motor gasoline"],
+    "JETKERO": ["jet fuel", "kerosene", "aviation fuel", "jet", "jet/kerosene"],
+    "GASOIL10": ["heating oil", "gasoil", "diesel", "singapore gasoil", "gasoil 10ppm"],
+    "FUELOIL180": ["fuel oil", "180 cst", "high sulphur fuel oil", "hsfo", "fuel oil 180"],
+    "FUELOIL380": ["fuel oil 380", "380 cst", "bunker fuel", "fuel oil", "hsfo 380"],
+    "LPG": ["lpg", "propane", "butane", "mont belvieu", "aramco cp", "liquefied petroleum"],
+}

@@ -138,3 +138,13 @@ class AIAskRequest(BaseModel):
 class AIAskResponse(BaseModel):
     provider: str
     answer: str
+
+
+class AICredentialsOut(BaseModel):
+    deepseek_configured: bool
+    claude_configured: bool
+
+
+class AICredentialsUpdate(BaseModel):
+    deepseek_api_key: Optional[str] = None
+    claude_api_key: Optional[str] = None

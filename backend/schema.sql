@@ -62,3 +62,10 @@ CREATE TABLE IF NOT EXISTS scrape_settings (
     frequency_minutes INT DEFAULT 30,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ai_credentials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    deepseek_api_key VARCHAR(200),
+    claude_api_key VARCHAR(200),
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

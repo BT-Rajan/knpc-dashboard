@@ -96,3 +96,14 @@ class ScrapeSetting(Base):
     id = Column(Integer, primary_key=True)
     frequency_minutes = Column(Integer, default=30)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AICredentials(Base):
+    """Admin-entered API keys, persisted in the DB so they survive without
+    env vars / a restart. Single-row table (id=1)."""
+    __tablename__ = "ai_credentials"
+
+    id = Column(Integer, primary_key=True)
+    deepseek_api_key = Column(String(200), nullable=True)
+    claude_api_key = Column(String(200), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

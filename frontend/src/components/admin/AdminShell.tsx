@@ -3,8 +3,9 @@ import SourcesManager from './SourcesManager'
 import ScrapeSettings from './ScrapeSettings'
 import LogsViewer from './LogsViewer'
 import CsvExport from './CsvExport'
+import AISettings from './AISettings'
 
-const TABS = ['Sources', 'Scrape Control', 'Logs', 'Export'] as const
+const TABS = ['Sources', 'Scrape Control', 'AI Settings', 'Logs', 'Export'] as const
 type Tab = (typeof TABS)[number]
 
 export default function AdminShell() {
@@ -32,6 +33,7 @@ export default function AdminShell() {
 
       {tab === 'Sources' && <SourcesManager />}
       {tab === 'Scrape Control' && <ScrapeSettings />}
+      {tab === 'AI Settings' && <AISettings />}
       {tab === 'Logs' && <LogsViewer />}
       {tab === 'Export' && <CsvExport />}
     </div>

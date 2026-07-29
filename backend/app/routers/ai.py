@@ -5,11 +5,8 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.auth import get_current_user
 from app.schemas import AIAskRequest, AIAskResponse
-from app.services import get_item_by_code_or_404, trend_fields, recent_news
-from app.config import (
-    DEEPSEEK_API_KEY, DEEPSEEK_API_URL, DEEPSEEK_MODEL,
-    CLAUDE_API_KEY, CLAUDE_API_URL, CLAUDE_MODEL,
-)
+from app.services import get_item_by_code_or_404, trend_fields, recent_news, resolve_ai_key
+from app.config import DEEPSEEK_API_URL, DEEPSEEK_MODEL, CLAUDE_API_URL, CLAUDE_MODEL
 
 router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(get_current_user)])
 
@@ -30,39 +27,49 @@ def _build_context(db: Session, item_code: str | None) -> str:
     return "\n".join(lines)
 
 
-def _ask_deepseek(prompt: str) -> str:
-    if not DEEPSEEK_API_KEY:
-        raise HTTPException(status_code=503, detail="DEEPSEEK_API_KEY is not configured on the server")
-    resp = requests.post(
-        DEEPSEEK_API_URL,
-        headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"},
-        json={"model": DEEPSEEK_MODEL, "messages": [{"role": "user", "content": prompt}]},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+def _ask_deepseek(prompt: str, api_key: str) -> str:
+    if not api_key:
+        raise HTTPException(status_code=503, detail="DeepSeek API key is not configured. Add it under Admin -> AI Settings.")
+    try:
+        resp = requests.post(
+            DEEPSEEK_API_URL,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": DEEPSEEK_MODEL, "messages": [{"role": "user", "content": prompt}]},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+    except requests.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"DeepSeek API error: {exc.response.status_code} {exc.response.text[:200]}")
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"DeepSeek request failed: {exc}")
 
 
-def _ask_claude(prompt: str) -> str:
-    if not CLAUDE_API_KEY:
-        raise HTTPException(status_code=503, detail="CLAUDE_API_KEY is not configured on the server")
-    resp = requests.post(
-        CLAUDE_API_URL,
-        headers={
-            "x-api-key": CLAUDE_API_KEY,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": CLAUDE_MODEL,
-            "max_tokens": 800,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    blocks = resp.json().get("content", [])
-    return "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+def _ask_claude(prompt: str, api_key: str) -> str:
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Claude API key is not configured. Add it under Admin -> AI Settings.")
+    try:
+        resp = requests.post(
+            CLAUDE_API_URL,
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": CLAUDE_MODEL,
+                "max_tokens": 800,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        blocks = resp.json().get("content", [])
+        return "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+    except requests.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Claude API error: {exc.response.status_code} {exc.response.text[:200]}")
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Claude request failed: {exc}")
 
 
 @router.post("/ask", response_model=AIAskResponse)
@@ -76,9 +83,9 @@ def ask(body: AIAskRequest, db: Session = Depends(get_db)):
     )
 
     if body.provider == "deepseek":
-        answer = _ask_deepseek(prompt)
+        answer = _ask_deepseek(prompt, resolve_ai_key(db, "deepseek"))
     elif body.provider == "claude":
-        answer = _ask_claude(prompt)
+        answer = _ask_claude(prompt, resolve_ai_key(db, "claude"))
     else:
         raise HTTPException(status_code=422, detail="provider must be 'deepseek' or 'claude'")
 

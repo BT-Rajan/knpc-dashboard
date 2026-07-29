@@ -10,10 +10,11 @@ from app.models import Item, Source, ScrapeLog, ScrapeSetting
 from app.schemas import (
     ItemOut, ItemCreate, SourceOut, SourceCreate, SourceUpdate,
     ScrapeLogOut, ScrapeSettingOut, ScrapeSettingUpdate,
+    AICredentialsOut, AICredentialsUpdate,
 )
 from app.scraper.runner import run_full_scrape, scrape_item
 from app.scraper import scheduler as scrape_scheduler
-from app.services import get_item_by_code_or_404
+from app.services import get_item_by_code_or_404, get_ai_credentials_row
 
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
@@ -143,3 +144,30 @@ def list_logs_plain(limit: int = 500, db: Session = Depends(get_db)):
         source = r.source_name or "-"
         lines.append(f"[{ts}] {r.status.upper():7s} item={item:12s} source={source:20s} {r.message or ''}")
     return "\n".join(lines) if lines else "No scrape runs logged yet."
+
+
+# --- AI credentials ---
+
+@router.get("/ai-credentials", response_model=AICredentialsOut)
+def get_ai_credentials(db: Session = Depends(get_db)):
+    row = get_ai_credentials_row(db)
+    return AICredentialsOut(
+        deepseek_configured=bool(row.deepseek_api_key),
+        claude_configured=bool(row.claude_api_key),
+    )
+
+
+@router.put("/ai-credentials", response_model=AICredentialsOut)
+def update_ai_credentials(body: AICredentialsUpdate, db: Session = Depends(get_db)):
+    row = get_ai_credentials_row(db)
+    # Empty string clears the key; omitted (None) leaves it untouched.
+    if body.deepseek_api_key is not None:
+        row.deepseek_api_key = body.deepseek_api_key.strip() or None
+    if body.claude_api_key is not None:
+        row.claude_api_key = body.claude_api_key.strip() or None
+    db.commit()
+    db.refresh(row)
+    return AICredentialsOut(
+        deepseek_configured=bool(row.deepseek_api_key),
+        claude_configured=bool(row.claude_api_key),
+    )

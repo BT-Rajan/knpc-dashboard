@@ -2,7 +2,8 @@ from datetime import date, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models import Item, PriceHistory, NewsItem
+from app.models import Item, PriceHistory, NewsItem, AICredentials
+from app.config import DEEPSEEK_API_KEY, CLAUDE_API_KEY
 
 
 def get_item_by_code_or_404(db: Session, code: str) -> Item:
@@ -61,3 +62,23 @@ def recent_news(db: Session, item_id: int, limit: int = 10):
         .limit(limit)
         .all()
     )
+
+
+def get_ai_credentials_row(db: Session) -> AICredentials:
+    row = db.query(AICredentials).first()
+    if not row:
+        row = AICredentials()
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+def resolve_ai_key(db: Session, provider: str) -> str:
+    """DB-entered key wins; falls back to the env-var default from config.py."""
+    row = get_ai_credentials_row(db)
+    if provider == "deepseek":
+        return row.deepseek_api_key or DEEPSEEK_API_KEY
+    if provider == "claude":
+        return row.claude_api_key or CLAUDE_API_KEY
+    return ""
