@@ -17,6 +17,19 @@ function emptySourceForm(itemId: number) {
   }
 }
 
+function sourceToForm(s: SourceOut) {
+  return {
+    item_id: s.item_id,
+    name: s.name,
+    url: s.url,
+    source_type: s.source_type,
+    value_selector: s.value_selector,
+    news_selector: s.news_selector || '',
+    priority: s.priority,
+    active: s.active,
+  }
+}
+
 function emptyItemForm() {
   return { code: '', name: '', category: 'Crude', unit: 'USD/bbl' }
 }
@@ -25,6 +38,7 @@ export default function SourcesManager() {
   const [items, setItems] = useState<ItemOut[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [sourceForm, setSourceForm] = useState(emptySourceForm(0))
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [itemForm, setItemForm] = useState(emptyItemForm())
   const [showAddItem, setShowAddItem] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -43,6 +57,7 @@ export default function SourcesManager() {
 
   useEffect(() => {
     if (selected) setSourceForm(emptySourceForm(selected.id))
+    setEditingId(null)
   }, [selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function addItem() {
@@ -56,13 +71,28 @@ export default function SourcesManager() {
     }
   }
 
-  async function addSource() {
+  function editSource(s: SourceOut) {
+    setEditingId(s.id)
+    setSourceForm(sourceToForm(s))
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    if (selected) setSourceForm(emptySourceForm(selected.id))
+  }
+
+  async function saveSource() {
     try {
-      await api.post('/api/admin/sources', sourceForm)
+      if (editingId != null) {
+        await api.patch(`/api/admin/sources/${editingId}`, sourceForm)
+      } else {
+        await api.post('/api/admin/sources', sourceForm)
+      }
+      setEditingId(null)
       setSourceForm(emptySourceForm(selected!.id))
       reload()
     } catch (e) {
-      setMessage(e instanceof ApiError ? e.message : 'Failed to add source')
+      setMessage(e instanceof ApiError ? e.message : 'Failed to save source')
     }
   }
 
@@ -180,6 +210,7 @@ export default function SourcesManager() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                          <button className="btn" onClick={() => editSource(s)}>Edit</button>
                           <button className="btn" onClick={() => toggleSource(s)}>{s.active ? 'Disable' : 'Enable'}</button>
                           <button className="btn btn-danger" onClick={() => deleteSource(s)}>Delete</button>
                         </div>
@@ -190,7 +221,7 @@ export default function SourcesManager() {
             </div>
 
             <div className="panel" style={{ padding: 18 }}>
-              <div className="eyebrow" style={{ marginBottom: 12 }}>Add source</div>
+              <div className="eyebrow" style={{ marginBottom: 12 }}>{editingId != null ? 'Edit source' : 'Add source'}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="field">
                   <label>Name</label>
@@ -219,7 +250,14 @@ export default function SourcesManager() {
                   <input type="number" value={sourceForm.priority} onChange={(e) => setSourceForm({ ...sourceForm, priority: Number(e.target.value) })} />
                 </div>
               </div>
-              <button className="btn btn-brass" style={{ marginTop: 14 }} onClick={addSource}>Add source</button>
+              <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                <button className="btn btn-brass" onClick={saveSource}>
+                  {editingId != null ? 'Save changes' : 'Add source'}
+                </button>
+                {editingId != null && (
+                  <button className="btn" onClick={cancelEdit}>Cancel</button>
+                )}
+              </div>
             </div>
           </>
         )}
