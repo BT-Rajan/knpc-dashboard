@@ -4,8 +4,11 @@ single admin + single viewer account, no self-signup).
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 EXPORT_TMP_DIR = BASE_DIR / "tmp_exports"

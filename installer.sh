@@ -1,182 +1,85 @@
-#!/bin/bash
-# KNPC Dashboard - Linux/macOS Installer
-# Comprehensive setup script for Ubuntu, Debian, macOS
-# Prerequisites: Python 3.10+, Node.js 18+
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+DB_HOST="localhost"
+DB_PORT="3306"
+DB_NAME="knpc"
+DB_USER="app_user"
+DB_PASSWORD="Chenani#44"
+BACKEND_PORT="8000"
 
-VERSION="1.0"
-PROJECT="KNPC Dashboard"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$ROOT_DIR/backend"
+FRONTEND_DIR="$ROOT_DIR/frontend"
 
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+fail() { echo "FAILED: $1" >&2; exit 1; }
 
-# Functions
-print_header() {
-    echo -e "${BLUE}============================================================================${NC}"
-    echo -e "${BLUE}$1${NC}"
-    echo -e "${BLUE}============================================================================${NC}"
-}
+for bin in mysql python3 npm pm2; do
+  command -v "$bin" >/dev/null || fail "$bin not installed"
+done
 
-print_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
-}
+echo "==> [1/7] MySQL root credentials needed to create db/user"
+read -rsp "MySQL root password (blank if none): " MYSQL_ROOT_PW; echo
+MYSQL_ROOT_CMD=(mysql -u root)
+[ -n "$MYSQL_ROOT_PW" ] && MYSQL_ROOT_CMD+=(-p"$MYSQL_ROOT_PW")
 
-print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
-}
+"${MYSQL_ROOT_CMD[@]}" <<SQL || fail "mysql root connection/DB setup"
+CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
+FLUSH PRIVILEGES;
+SQL
 
-print_error() {
-    echo -e "${RED}✗ $1${NC}"
-    exit 1
-}
+echo "==> [2/7] Verifying app_user can actually connect"
+mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -e "SELECT 1;" \
+  || fail "app_user cannot connect - check grants above"
 
-print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
-}
+echo "==> [3/7] Writing backend/.env"
+SESSION_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+cat > "$BACKEND_DIR/.env" <<ENV
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
+SESSION_SECRET=${SESSION_SECRET}
+SCRAPE_FREQUENCY_MINUTES=30
+DEEPSEEK_API_KEY=
+CLAUDE_API_KEY=
+ENV
 
-# Clear screen
-clear
+echo "==> [4/7] Confirming config.py actually loads .env (dotenv fix present)"
+grep -q "load_dotenv" "$BACKEND_DIR/app/config.py" \
+  || fail "backend/app/config.py has no load_dotenv() - pull the fixed branch first"
 
-echo ""
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║ ${PROJECT} - Linux/macOS Installer v${VERSION}${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════════════════════╝${NC}"
-echo ""
-
-# Check for Python
-print_info "Checking for Python 3.10+..."
-if ! command -v python3 &> /dev/null; then
-    print_error "Python 3 not found!"
-fi
-
-PYTHON_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-print_success "Python ${PYTHON_VER} found"
-
-# Check for Node.js
-print_info "Checking for Node.js 18+..."
-if ! command -v node &> /dev/null; then
-    print_error "Node.js not found! Install from https://nodejs.org/"
-fi
-
-NODE_VER=$(node --version)
-print_success "Node ${NODE_VER} found"
-
-NPM_VER=$(npm --version)
-print_success "npm ${NPM_VER} found"
-
-echo ""
-print_header "Setting up Backend (FastAPI)"
-echo ""
-
-cd backend
-
-# Create virtual environment
-if [ ! -d "venv" ]; then
-    print_info "Creating Python virtual environment..."
-    python3 -m venv venv
-    print_success "Virtual environment created"
-else
-    print_success "Virtual environment already exists"
-fi
-
-# Activate virtual environment
-print_info "Activating virtual environment..."
+echo "==> [5/7] Python venv + deps"
+cd "$BACKEND_DIR"
+python3 -m venv venv
 source venv/bin/activate
-print_success "Virtual environment activated"
+pip install --upgrade pip -q
+pip install -r requirements.txt -q
+python -c "import dotenv" || fail "python-dotenv not installed"
+deactivate
 
-# Upgrade pip
-print_info "Upgrading pip..."
-python -m pip install --upgrade pip -q
+echo "==> [6/7] Frontend build (served by FastAPI as static)"
+cd "$FRONTEND_DIR"
+npm install --silent
+npm run build
+[ -d "$FRONTEND_DIR/dist" ] || fail "frontend build did not produce dist/"
 
-# Install dependencies
-print_info "Installing Python dependencies..."
-pip install -q -r requirements.txt
-print_success "Python dependencies installed"
+echo "==> [7/7] Starting pm2"
+cd "$ROOT_DIR"
+pm2 delete knpc-backend >/dev/null 2>&1 || true
+pm2 start "$BACKEND_DIR/venv/bin/uvicorn" \
+  --name knpc-backend \
+  --cwd "$BACKEND_DIR" \
+  -- app.main:app --host 0.0.0.0 --port "$BACKEND_PORT"
+pm2 save
 
-# Verify imports
-print_info "Verifying Python imports..."
-python -c "from app.main import app; print('[OK] FastAPI app imports successfully')" || print_error "Failed to import FastAPI app"
-print_success "FastAPI app verified"
+sleep 2
+echo "==> Health check"
+curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/health" \
+  && echo -e "\nOK - serving on :${BACKEND_PORT}" \
+  || fail "backend not responding - run: pm2 logs knpc-backend"
 
-cd ..
-
-echo ""
-print_header "Setting up Frontend (React + Vite)"
-echo ""
-
-cd frontend
-
-# Install Node dependencies
-print_info "Installing Node.js dependencies..."
-echo "This may take a few minutes..."
-npm install --silent 2>&1 | grep -v "npm warn" || true
-print_success "Node.js dependencies installed"
-
-# Run build
-print_info "Building React frontend..."
-npm run build --silent 2>&1 | tail -5 || print_warning "Frontend build completed with notices"
-if [ -d "dist" ]; then
-    DIST_SIZE=$(du -sh dist | cut -f1)
-    print_success "Frontend built successfully (${DIST_SIZE})"
-else
-    print_warning "Frontend dist directory not found, but continuing..."
-fi
-
-cd ..
-
-# Check for .env file
-echo ""
-print_header "Configuration Setup"
-echo ""
-
-if [ ! -f ".env" ]; then
-    print_info "No .env file found. Creating from template..."
-    if [ -f ".env.example" ]; then
-        cp .env.example .env
-        print_success "Created .env from template"
-        print_warning "Please update .env with your database credentials:"
-        echo "   DB_HOST=localhost"
-        echo "   DB_PORT=3306"
-        echo "   DB_USER=root"
-        echo "   DB_PASSWORD=your_password"
-    fi
-else
-    print_success ".env file already exists"
-fi
-
-echo ""
-print_header "Installation Complete!"
-echo ""
-
-echo "You can now start the application:"
-echo ""
-echo -e "${GREEN}Start Backend:${NC}"
-echo "  1. cd backend"
-echo "  2. source venv/bin/activate"
-echo "  3. python run.py"
-echo "  4. Backend will start on http://localhost:8000"
-echo ""
-echo -e "${GREEN}Start Frontend (in new terminal):${NC}"
-echo "  1. cd frontend"
-echo "  2. npm run dev"
-echo "  3. Frontend will open on http://localhost:5173"
-echo ""
-echo -e "${GREEN}Or run commands in sequence:${NC}"
-echo "  cd backend && source venv/bin/activate && python run.py &"
-echo "  cd frontend && npm run dev"
-echo ""
-echo -e "${GREEN}Documentation:${NC}"
-echo "  - README.md           (Overview)"
-echo "  - QUICK_START.md      (Quick reference)"
-echo "  - FEATURE_UPDATES.md  (Technical details)"
-echo ""
-echo -e "${BLUE}Next steps:${NC}"
-echo "  1. Update .env with your database settings"
-echo "  2. Run backend and frontend servers"
-echo "  3. Open http://localhost:5173 in your browser"
-echo ""
+pm2 status
