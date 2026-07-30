@@ -5,7 +5,7 @@ DB_HOST="localhost"
 DB_PORT="3306"
 DB_NAME="knpc"
 DB_USER="app_user"
-DB_PASSWORD="Chenani#44"
+DB_PASSWORD="Chennai#44"
 BACKEND_PORT="8000"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,12 +18,9 @@ for bin in mysql python3 npm pm2; do
   command -v "$bin" >/dev/null || fail "$bin not installed"
 done
 
-echo "==> [1/7] MySQL root credentials needed to create db/user"
-read -rsp "MySQL root password (blank if none): " MYSQL_ROOT_PW; echo
-MYSQL_ROOT_CMD=(mysql -u root)
-[ -n "$MYSQL_ROOT_PW" ] && MYSQL_ROOT_CMD+=(-p"$MYSQL_ROOT_PW")
+echo "==> [1/7] Creating db/user via sudo mysql (Ubuntu root uses auth_socket, not a password)"
 
-"${MYSQL_ROOT_CMD[@]}" <<SQL || fail "mysql root connection/DB setup"
+sudo mysql <<SQL || fail "mysql root connection/DB setup"
 CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4;
 CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
