@@ -5,7 +5,7 @@ DB_HOST="localhost"
 DB_PORT="3306"
 DB_NAME="knpc"
 DB_USER="app_user"
-DB_PASSWORD="Chennai#44"
+DB_PASSWORD="Chenani#44"
 BACKEND_PORT="8000"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,20 +18,11 @@ for bin in mysql python3 npm pm2; do
   command -v "$bin" >/dev/null || fail "$bin not installed"
 done
 
-echo "==> [1/7] Creating db/user via sudo mysql (Ubuntu root uses auth_socket, not a password)"
-
-sudo mysql <<SQL || fail "mysql root connection/DB setup"
-CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4;
-CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
-GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
-FLUSH PRIVILEGES;
-SQL
-
-echo "==> [2/7] Verifying app_user can actually connect"
+echo "==> [1/6] Verifying existing DB/user (no creation — assumed already set up)"
 mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -e "SELECT 1;" \
-  || fail "app_user cannot connect - check grants above"
+  || fail "cannot connect as $DB_USER to $DB_NAME — check credentials/grants"
 
-echo "==> [3/7] Writing backend/.env"
+echo "==> [2/6] Writing backend/.env"
 SESSION_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
 cat > "$BACKEND_DIR/.env" <<ENV
 DB_HOST=${DB_HOST}
@@ -45,11 +36,11 @@ DEEPSEEK_API_KEY=
 CLAUDE_API_KEY=
 ENV
 
-echo "==> [4/7] Confirming config.py actually loads .env (dotenv fix present)"
+echo "==> [3/6] Confirming config.py actually loads .env (dotenv fix present)"
 grep -q "load_dotenv" "$BACKEND_DIR/app/config.py" \
   || fail "backend/app/config.py has no load_dotenv() - pull the fixed branch first"
 
-echo "==> [5/7] Python venv + deps"
+echo "==> [4/6] Python venv + deps"
 cd "$BACKEND_DIR"
 python3 -m venv venv
 source venv/bin/activate
@@ -58,13 +49,13 @@ pip install -r requirements.txt -q
 python -c "import dotenv" || fail "python-dotenv not installed"
 deactivate
 
-echo "==> [6/7] Frontend build (served by FastAPI as static)"
+echo "==> [5/6] Frontend build (served by FastAPI as static)"
 cd "$FRONTEND_DIR"
 npm install --silent
 npm run build
 [ -d "$FRONTEND_DIR/dist" ] || fail "frontend build did not produce dist/"
 
-echo "==> [7/7] Starting pm2"
+echo "==> [6/6] Starting pm2"
 cd "$ROOT_DIR"
 pm2 delete knpc-backend >/dev/null 2>&1 || true
 pm2 start "$BACKEND_DIR/venv/bin/uvicorn" \
