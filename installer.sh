@@ -61,6 +61,7 @@ pm2 delete knpc-backend >/dev/null 2>&1 || true
 pm2 start "$BACKEND_DIR/venv/bin/uvicorn" \
   --name knpc-backend \
   --cwd "$BACKEND_DIR" \
+  --interpreter none \
   -- app.main:app --host 0.0.0.0 --port "$BACKEND_PORT"
 pm2 save
 
